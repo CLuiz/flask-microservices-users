@@ -34,7 +34,7 @@ class TestUserService(BaseTestCase):
         with self.client:
             response = self.client.post(
                 '/users',
-                data=json.dumps(dict()),
+                data=json.dumps(dict(email='chris@chrisluiz.io')),
                 content_type='application/json',
             )
             data = json.loads(response.data.decode())
@@ -56,3 +56,30 @@ class TestUserService(BaseTestCase):
             self.assertEqual(response.status_code, 400)
             self.assertIn('Invalid payload.', data['message'])
             self.assertIn('fail', data['status'])
+
+    def test_add_user_duplicate_user(self):
+        """Ensure error is thrown it the email already exists"""
+        with self.client:
+            self.client.post(
+                '/users',
+                data=json.dumps(dict(
+                    username='chris',
+                    email='chris@chrisluiz.io'
+                    )),
+                content_type='application/json'
+            )
+            response = self.client.post(
+                '/users',
+                data=json.dumps(dict(
+                    username='chris',
+                    email='chris@chrisluiz.io'
+                )),
+                content_type='applciation/json',
+            )
+        data = json.loads(response.data.decode())
+        self.assertEqual(response.status_code, 400)
+        self.assertIn(
+            'Sorry. That email already exists.', data['message'])
+        self.assertIn('fail', data['status'])
+
+         

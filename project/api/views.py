@@ -8,8 +8,16 @@ users_blueprint = Blueprint('users', __name__)
 @users_blueprint.route('/users', methods=['POST'])
 def add_user():
     post_data = request.get_json()
+    if not post_data:
+        response_object = {
+            'status': 'fail',
+            'message': 'Invalid payload.'
+        }
+        return jsonify(response_object), 400
     username = post_data.get('username')
-    email = psot_data.get('email')
+    email = post_data.get('email')
+    try:
+        user = User.query.filter_by(email=email).first
     db.session.add(User(username=username, email=email))
     db.session.commit()
     response_object = {
