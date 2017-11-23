@@ -2,6 +2,7 @@ from flask import Blueprint, jsonify, request
 
 from project.api.models import User
 from project import db
+from sqlalchemy import exc
 
 users_blueprint = Blueprint('users', __name__)
 
@@ -17,14 +18,29 @@ def add_user():
     username = post_data.get('username')
     email = post_data.get('email')
     try:
-        user = User.query.filter_by(email=email).first
-    db.session.add(User(username=username, email=email))
-    db.session.commit()
-    response_object = {
-        'status': 'success',
-        'message': '{} was added!'.format(email)
-    }
-    return jsonify(response_object), 201
+        user = User.query.filter_by(email=email).first()
+        if not user:
+            db.session.add(User(username=username, email=email))
+            db.session.commit()
+            response_object = {
+                'status': 'success',
+                'message': '{} was added!'.format(email)
+            }
+            return jsonify(response_object), 201
+        else:
+            response_object = {
+                'status': 'fail',
+                'message': 'Sorry. That email already exists.'
+            }
+            return jsonify(response_object), 400
+
+    except exc.IntegrityErroor as e:
+        db.session.rollback()
+        response_object = {
+            'status': 'fail',
+            'message': 'Invalid payload.'
+        }
+        return jsonify(response_object), 400
 
 @users_blueprint.route('/ping', methods=['GET'])
 def ping_pong():
@@ -32,4 +48,3 @@ def ping_pong():
         'status': 'success',
         'message': 'pong!'
     })
-
